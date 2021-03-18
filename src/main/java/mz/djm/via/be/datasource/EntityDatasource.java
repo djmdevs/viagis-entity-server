@@ -11,6 +11,11 @@ import org.sqlite.javax.SQLiteConnectionPoolDataSource;
  * @author Djm Core
  *
  */
+
+
+/*
+* Add this implementation on gendao
+*/
 public class EntityDatasource extends SQLiteConnectionPoolDataSource {
 	
 	@Override
