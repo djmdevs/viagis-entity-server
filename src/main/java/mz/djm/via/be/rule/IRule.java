@@ -38,8 +38,18 @@ public interface IRule {
 	/**
 	 * Avalia os criterios de classificação 
 	 * e atribui a pontuação ponderada ao seguimento com base na analise multicritério.
+	 * retorna o indice de prioridade
 	 */
 	public Double executeRule40(Criterio criterio);
+	
+	/**
+	 * Calcula a prioridade dos segmentos por intervencao com base nos criterios
+	 * de avaliacao
+	 * @param criterio
+	 * @return
+	 */
+	public Double executeRule50(Criterio criterio);
+	
 	
 	
 

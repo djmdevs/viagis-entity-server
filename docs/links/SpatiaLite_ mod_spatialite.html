@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<!-- saved from url=(0069)https://www.gaia-gis.it/fossil/libspatialite/wiki?name=mod_spatialite -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--<base href="https://www.gaia-gis.it/fossil/libspatialite/wiki?name=mod_spatialite">--><base href=".">
+<title>SpatiaLite: mod_spatialite</title>
+<link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://www.gaia-gis.it/fossil/libspatialite/timeline.rss">
+<link rel="stylesheet" href="./SpatiaLite_ mod_spatialite_files/style.css" type="text/css" media="screen">
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <img src="./SpatiaLite_ mod_spatialite_files/logo" alt="logo">
+  </div>
+  <div class="title"><big>mod_spatialite</big></div>
+  <div class="status">Not logged in</div>
+</div>
+<div class="mainmenu">
+<a href="https://www.gaia-gis.it/fossil/libspatialite/home">Home</a>
+<a href="https://www.gaia-gis.it/fossil/libspatialite/timeline">Timeline</a>
+<a href="https://www.gaia-gis.it/fossil/libspatialite/dir?ci=tip">Files</a>
+<a href="https://www.gaia-gis.it/fossil/libspatialite/brlist">Branches</a>
+<a href="https://www.gaia-gis.it/fossil/libspatialite/taglist">Tags</a>
+<a href="https://www.gaia-gis.it/fossil/libspatialite/reportlist">Tickets</a>
+<a href="https://www.gaia-gis.it/fossil/libspatialite/wiki">Wiki</a>
+<a href="https://www.gaia-gis.it/fossil/libspatialite/login">Login</a>
+</div>
+<div class="submenu">
+<a class="label" href="https://www.gaia-gis.it/fossil/libspatialite/wikihelp">Help</a>
+<a class="label" href="https://www.gaia-gis.it/fossil/libspatialite/whistory?name=mod_spatialite">History</a>
+</div>
+<div class="content"><span id="debugMsg"></span>
+<p><a href="https://www.gaia-gis.it/fossil/libspatialite/wiki?name=4.3.0+doc">back</a>
+</p><h1>Dynamically loading SpatiaLite as an <u><i>extension module</i></u></h1>
+<h3>Theoretical foundations</h3>
+Technically speaking, SpatiaLite simply is an extension module adding Spatial processing capabilities to SQLite.<br>
+Consequently some appropriate mechanism allowing to load both binary libraries (<i>libsqlite3</i> and <i>libspatialite</i>) then properly registering within SQLite3 the many <b><i>extended Spatial SQL functions</i></b> implemented by SpatiaLite is a strictly required task.<br>
+A further complication should be taken in proper debt; <i>libspatialite</i> isn't a simple stand-alone self-contained library and depends on several further libraries (<i>libgeos</i>, <i>libproj</i>, <i>libxml2</i> and so on).<br><br>
+There are several possible alternative paths leading to this final goal:
+<ul>
+<li>using <b><i>static linkage</i></b>: a straightforward solution avoiding many subsequent headaches related to installation and run-time configuration.<br>
+Following this approach a single monolithic executable internally containing all required binary code will be created at build time; this monolithic executable will consequently have no external dependencies at all, thus radically simplifying any subsequent installation task.<br>
+Such strategy nicely works in the case of stand-alone self-contained apps (e.g. both <b>spatialite.exe</b> and <b>spatialite_gui.exe</b> Windows binaries are usually built this way).<br>
+Unhappily this elementary simple solution doesn't fit well in Linux and Unix-like environments; and even worst often directly conflicts with the internal architecture supported by many language connectors or by other complex frameworks (as e.g. is <b>QGIS</b>).</li>
+<li>using <b><i>shared libraries<i></i></i></b> (aka <b><i>DLLs</i></b> on Windows).<br>
+This second approach carefully avoids linking once for all a monolithic executable; at the opposite, each single code component will be packaged as an autonomous individual member, and only at run-time all components will be finally bound together.<br>
+The good new: following this approach each library/component will be (hopefully) installed only once on the target system, and every executable depending on that library will load exactly the same binary code thus granting a robust overall consistency.<br>
+The bad new: if a single required component couldn't be loaded at run-time (for any possible reason) the executable as a whole will fail to run.<br>
+To make things even worst, this schema works nicely on Linux, Unix and Mac OS X; but on Windows it's plagued by many serious issues (the infamous <b><i>DLL hell</i></b>).</li>
+<li>using <b><i>dynamic loading</i></b> aka <b><i>late binding</i></b> (which hasn't to be confused with simply using shared libraries).<br>
+Following this third approach an extension module could be selectively loaded or not and the actual action will be activated only at run-time depending on some request event.
+If for any reason the main executable fails to load an eventual extension module, it will still continue to work by simply ignoring every optional feature requiring the failing module.
+As a direct consequence, an executable built this way can theoretically growth to the infinite in a highly dynamic fashion; this corresponds to a so called <b><i>plug-in</i></b> architecture.<br>
+Happily enough SQLite3 fully supports this more advanced mechanism; and this option is widely supported by many language connectors (<i>Python</i>, <i>Java/JDBC</i>, <i>PHP</i>, <i>C# .NET</i> and others).</li>
+
+</ul><br>
+Silly oddities (to be carefully avoided):
+<ul>
+<li>nothing forbids to create hybrid configurations, e.g. adopting a mix of both static and dynamic linkage.</li>
+<li>such a solution could easily appeal naive packagers, because it apparently allows to simplify installation and configuration task.</li>
+<li>anyway this is often a dangerous pitfall, simply leading to potentially unstable and self-conflicting configurations: it's the so called <b><i>cobra effect</i></b> (i.e. when an attempted solution to a problem actually makes the problem worse).</li>
+<li><b><u>Golden rule</u></b>: never attempt to introduce statically linked libraries in a configuration widely based on shared libraries. This one isn't a clever solution, and will simply introduce many further unexpected complications.</li>
+</ul><br>
+<h3>Dynamic loading: how it works</h3>
+<i>libsqlite3</i> has the capability to dynamically load extension modules. This feature is available as a C-language API, but is available as a <i>special</i> SQL function as well:
+<pre class="verbatim">SELECT load_extension('mod_spatialite');
+</pre>
+This SQL function make elementary simple (and absolutely language independent) the problem of loading any possible extension; you are simply expected to execute a rather trivial SQL statement in order to load an external extension only when it's actually required.<br><br>
+Loadable extension anatomy:
+<ul>
+<li>any SQLite's extension module is expected to declare a well known conventional interface.
+Except for this, any SQLite's own extension simply is an ordinary shared library (or DLL) as any other.</li>
+<li>a real extension module will never explicitly depend on SQLite3, because the following actions will be automatically taken by SQLite3 when loading:
+<ul>
+<li>all SQL functions defined/supported by the extension will be added to the standard list; and eventually an extension could ever overload any pre-defined SQL function directly defined by SQLite3 itself.</li>
+<li>that's not all; SQLite3 will implicitly pass to the extension a <i><u>mirror copy</u></i> of its own APIs: this will ensure that exactly the same code will support both the SQLite's own core and the extension, and will effectively avoid any possible conflict between them.</li> 
+</ul></li>
+<li>starting since SQLite version 3.7.17 (released on 2013-05-20) the loadable extension mechanism was significantly enhanced:<ul>
+<li>any extension module is now expected to declare its own individual entry point directly related to the name of the extension; this make simpler loading more modules at the same time.</li>
+<li>just the <b><i>base name</i></b> of the module is expected to be specified; any eventual <b><i>suffix</i></b> (as e.g. <i>.so</i> or <i>.dll</i>) will be automatically added by SQLite itself accordingly to the specific target system expectations: this allows for an easier cross-platform portability.</li>
+<li>any extension module adopting the more recent conventions could be eventually be loaded even when using some obsolete version (&lt; 3.7.17), but in this case same special actions are required.
+Please consult the SQLite's own <a href="http://www.sqlite.org/loadext.html">documentation</a> for more details.</li>
+</ul></li>
+</ul>
+<br>
+Common failure causes:
+<ul>
+<li>if the expected conventional interface isn't correctly declared by the shared library being loaded, then SQLite3 will simply assume that it's not a valid extension module.<br>
+And consequently will refuse to load the module without any other consequence (except may be printing some appropriate error message).</li>
+<li>a more obvious failure cause could be the one to attempt loading a not existing module (or possibly, a module whom actual address couldn't be resolved by applying the standard system-dependent searching rules).</li> 
+<li>finally, the module could effectively exists and could correctly declare a valid conventional interface. Anyway, if the corresponding shared library has further dependencies some broken link could possibly forbid a successful loading.</li>
+<li>the last hill-fated combination: SQLite3 is a strongly configurable component. If for any highly questionable choice your system packager had decided to disable at all the extension module mechanism you'll then never be able to load any extension. Full stop. (anyway you'll probably be able to switch to some more reasonable / less paranoid distribution).</li>
+<li><b><u>Useful hint</u></b>: many language connectors support a very minimalistic and rather useless diagnostic. If you are experiencing some trouble in successfully loading SpatiaLite as an extension, any attempt to directly debug your code will probably be a frustrating and inconclusive experience.<br>
+Anyway you can always apply an alternative approach:
+<ul>
+<li>start the <b>sqlite3</b> Command Line front-end.</li>
+<li>then execute your problematic <b>SELECT load_extension</b> statement.</li>
+<li>if some failure forbids to successfully load the extension module then <b>sqlite3</b> will always print many useful error messages clearly explaining where is the offending cause. In a reasonable configuration both the sqlite3 tool and your language connector should invoke the same identical copy of <b><i>libsqlite3</i></b>, so you'll effectively test the same run-time configuration adopted by the language connector but taking profit from richer diagnostic messages (unhappily not all configurations are always net and clean as you could expect ... this rule has many exceptions, most notably on Windows).</li>
+</ul></li>
+</ul>
+<h3>What's new in <u><i>mod_spatialite</i></u></h3>
+You'll probably be already accustomed to load SpatiaLite as a dynamic extension; but any previous version before <b>4.2</b> made no real distinction between loadable modules and general-purpose shared libraries.<br>
+As we painfully learned by direct on-the-field experience, this apparently simpler configuration caused lot of troubles: instabilities, sudden crashes and so on. Making a clearer distinction between a <u><i>general-purpose shared library</i></u> and a <u><i>pure loadable module</i></u> seems to be the definitive solution.<br>
+Exactly here is the radical innovation introduce starting since version <b>4.2</b>; now SpatiaLite is distributed in two alternative flavors:
+<ul>
+<li><b><i>libspatialite</i></b> (<b><i>.so</i></b>, <b><i>.dll</i></b>, <b><i>.dylib</i></b> and so on): a genuine classic shared library.<br>
+It will always depend on some external <i>libsqlite3</i>, and is uniquely intended to be used by stand-alone applications (such as e.g. <b><i>spatialite</i></b> or <b><i>spatialite_gui</i></b>).<br>
+You'll never be able to successfully load this <b><i>libspatialite</i></b> shared library as a dynamic extension via the <b>SELECT load_extension</b> mechanism, simply because it doesn't declare the required conventional interface.</li>
+<li><b><i>mod_spatialite</i></b> (<b><i>.so</i></b>, <b><i>.dll</i></b>, <b><i>.dylib</i></b> and so on): this is simply intended as pure loadable module lacking any explicit SQLite3 dependency.<br>
+You'll never be able to directly link this <b><i>mod_spatialite</i></b> shared library following the classic way, because it doesn't declare any external link symbol except that a single one: i.e. the conventional interface.
+The unique possible way to load and activate this module is by calling a <b>SELECT load_extension</b> SQL statement.</li>
+</ul><br>
+<hr><br>
+<a href="https://www.gaia-gis.it/fossil/libspatialite/wiki?name=4.3.0+doc">back</a>
+<script nonce="">/* builtin.c:597 */
+(function(){
+if(window.NodeList && !NodeList.prototype.forEach){NodeList.prototype.forEach = Array.prototype.forEach;}
+if(!window.fossil) window.fossil={};
+window.fossil.version = "2.13 [e7bba4ff36] 2020-11-01 00:13:51 UTC";
+window.fossil.rootPath = "/fossil/libspatialite"+'/';
+window.fossil.config = {projectName: "SpatiaLite",
+shortProjectName: "",
+projectCode: "333bc5f2fc76e1a8763d8439199ff6882ea81dca",
+/* Length of UUID hashes for display purposes. */hashDigits: 10, hashDigitsUrl: 16,
+editStateMarkers: {/*Symbolic markers to denote certain edit states.*/isNew:'[+]', isModified:'[*]', isDeleted:'[-]'},
+confirmerButtonTicks: 3 /*default fossil.confirmer tick count.*/,
+skin:{isDark: false/*true if the current skin has the 'white-foreground' detail*/}
+};
+if(fossil.config.skin.isDark) document.body.classList.add('fossil-dark-style');
+window.fossil.page = {name:"wiki"};
+})();
+</script>
+<script nonce="">/* doc.c:414 */
+window.addEventListener('load', ()=>window.fossil.pikchr.addSrcView(), false);
+</script>
+</div>
+<script nonce="">/* style.c:726 */
+function debugMsg(msg){
+var n = document.getElementById("debugMsg");
+if(n){n.textContent=msg;}
+}
+</script>
+<script nonce="">
+/* fossil.bootstrap.js *************************************************************/
+"use strict";
+(function () {
+if(typeof window.CustomEvent === "function") return false;
+window.CustomEvent = function(event, params) {
+if(!params) params = {bubbles: false, cancelable: false, detail: null};
+const evt = document.createEvent('CustomEvent');
+evt.initCustomEvent( event, !!params.bubbles, !!params.cancelable, params.detail );
+return evt;
+};
+})();
+(function(global){
+const F = global.fossil;
+const timestring = function f(){
+if(!f.rx1){
+f.rx1 = /\.\d+Z$/;
+}
+const d = new Date();
+return d.toISOString().replace(f.rx1,'').split('T').join(' ');
+};
+const localTimeString = function ff(d){
+if(!ff.pad){
+ff.pad = (x)=>(''+x).length>1 ? x : '0'+x;
+}
+d || (d = new Date());
+return [
+d.getFullYear(),'-',ff.pad(d.getMonth()+1),
+'-',ff.pad(d.getDate()),
+' ',ff.pad(d.getHours()),':',ff.pad(d.getMinutes()),
+':',ff.pad(d.getSeconds())
+].join('');
+};
+F.message = function f(msg){
+const args = Array.prototype.slice.call(arguments,0);
+const tgt = f.targetElement;
+if(args.length) args.unshift(
+localTimeString()+':'
+);
+if(tgt){
+tgt.classList.remove('error');
+tgt.innerText = args.join(' ');
+}
+else{
+if(args.length){
+args.unshift('Fossil status:');
+console.debug.apply(console,args);
+}
+}
+return this;
+};
+F.message.targetElement =
+document.querySelector('#fossil-status-bar');
+if(F.message.targetElement){
+F.message.targetElement.addEventListener(
+'dblclick', ()=>F.message(), false
+);
+}
+F.error = function f(msg){
+const args = Array.prototype.slice.call(arguments,0);
+const tgt = F.message.targetElement;
+args.unshift(timestring(),'UTC:');
+if(tgt){
+tgt.classList.add('error');
+tgt.innerText = args.join(' ');
+}
+else{
+args.unshift('Fossil error:');
+console.error.apply(console,args);
+}
+return this;
+};
+F.encodeUrlArgs = function(obj,tgtArray,fakeEncode){
+if(!obj) return '';
+const a = (tgtArray instanceof Array) ? tgtArray : [],
+enc = fakeEncode ? (x)=>x : encodeURIComponent;
+let k, i = 0;
+for( k in obj ){
+if(i++) a.push('&');
+a.push(enc(k),'=',enc(obj[k]));
+}
+return a===tgtArray ? a : a.join('');
+};
+F.repoUrl = function(path,urlParams){
+if(!urlParams) return this.rootPath+path;
+const url=[this.rootPath,path];
+url.push('?');
+if('string'===typeof urlParams) url.push(urlParams);
+else if(urlParams && 'object'===typeof urlParams){
+this.encodeUrlArgs(urlParams, url);
+}
+return url.join('');
+};
+F.isObject = function(v){
+return v &&
+(v instanceof Object) &&
+('[object Object]' === Object.prototype.toString.apply(v) );
+};
+F.mergeLastWins = function(){
+var k, o, i;
+const n = arguments.length, rc={};
+for(i = 0; i < n; ++i){
+if(!F.isObject(o = arguments[i])) continue;
+for( k in o ){
+if(o.hasOwnProperty(k)) rc[k] = o[k];
+}
+}
+return rc;
+};
+F.hashDigits = function(hash,forUrl){
+const n = ('number'===typeof forUrl)
+? forUrl : F.config[forUrl ? 'hashDigitsUrl' : 'hashDigits'];
+return ('string'==typeof hash ? hash.substr(
+0, n
+) : hash);
+};
+F.onPageLoad = function(callback){
+window.addEventListener('load', callback, false);
+return this;
+};
+F.onDOMContentLoaded = function(callback){
+window.addEventListener('DOMContentLoaded', callback, false);
+return this;
+};
+F.shortenFilename = function(name){
+const a = name.split('/');
+if(a.length<=2) return name;
+while(a.length>2) a.shift();
+return '.../'+a.join('/');
+};
+F.page.addEventListener = function f(eventName, callback){
+if(!f.proxy){
+f.proxy = document.createElement('span');
+}
+f.proxy.addEventListener(eventName, callback, false);
+return this;
+};
+F.page.dispatchEvent = function(eventName, eventDetail){
+if(this.addEventListener.proxy){
+try{
+this.addEventListener.proxy.dispatchEvent(
+new CustomEvent(eventName,{detail: eventDetail})
+);
+}catch(e){
+console.error(eventName,"event listener threw:",e);
+}
+}
+return this;
+};
+F.page.setPageTitle = function(title){
+const t = document.querySelector('title');
+if(t) t.innerText = title;
+return this;
+};
+})(window);
+/* fossil.dom.js *************************************************************/
+"use strict";
+(function(F){
+const argsToArray = (a)=>Array.prototype.slice.call(a,0);
+const isArray = (v)=>v instanceof Array;
+const dom = {
+create: function(elemType){
+return document.createElement(elemType);
+},
+createElemFactory: function(eType){
+return function(){
+return document.createElement(eType);
+};
+},
+remove: function(e){
+if(e.forEach){
+e.forEach(
+(x)=>x.parentNode.removeChild(x)
+);
+}else{
+e.parentNode.removeChild(e);
+}
+return e;
+},
+clearElement: function f(e){
+if(!f.each){
+f.each = function(e){
+if(e.forEach){
+e.forEach((x)=>f(x));
+return e;
+}
+while(e.firstChild) e.removeChild(e.firstChild);
+};
+}
+argsToArray(arguments).forEach(f.each);
+return arguments[0];
+},
+};
+dom.splitClassList = function f(str){
+if(!f.rx){
+f.rx = /(\s+|\s*,\s*)/;
+}
+return str ? str.split(f.rx) : [str];
+};
+dom.div = dom.createElemFactory('div');
+dom.p = dom.createElemFactory('p');
+dom.code = dom.createElemFactory('code');
+dom.pre = dom.createElemFactory('pre');
+dom.header = dom.createElemFactory('header');
+dom.footer = dom.createElemFactory('footer');
+dom.section = dom.createElemFactory('section');
+dom.span = dom.createElemFactory('span');
+dom.strong = dom.createElemFactory('strong');
+dom.em = dom.createElemFactory('em');
+dom.label = function(forElem, text){
+const rc = document.createElement('label');
+if(forElem){
+if(forElem instanceof HTMLElement){
+forElem = this.attr(forElem, 'id');
+}
+dom.attr(rc, 'for', forElem);
+}
+if(text) this.append(rc, text);
+return rc;
+};
+dom.img = function(src){
+const e = this.create('img');
+if(src) e.setAttribute('src',src);
+return e;
+};
+dom.a = function(href,label){
+const e = this.create('a');
+if(href) e.setAttribute('href',href);
+if(label) e.appendChild(dom.text(true===label ? href : label));
+return e;
+};
+dom.hr = dom.createElemFactory('hr');
+dom.br = dom.createElemFactory('br');
+dom.text = (t)=>document.createTextNode(t||'');
+dom.button = function(label){
+const b = this.create('button');
+if(label) b.appendChild(this.text(label));
+return b;
+};
+dom.textarea = function(){
+const rc = this.create('textarea');
+let rows, cols, readonly;
+if(1===arguments.length){
+if('boolean'===typeof arguments[0]){
+readonly = !!arguments[0];
+}else{
+rows = arguments[0];
+}
+}else if(arguments.length){
+rows = arguments[0];
+cols = arguments[1];
+readonly = arguments[2];
+}
+if(rows) rc.setAttribute('rows',rows);
+if(cols) rc.setAttribute('cols', cols);
+if(readonly) rc.setAttribute('readonly', true);
+return rc;
+};
+dom.select = dom.createElemFactory('select');
+dom.option = function(value,label){
+const a = arguments;
+var sel;
+if(1==a.length){
+if(a[0] instanceof HTMLElement){
+sel = a[0];
+}else{
+value = a[0];
+}
+}else if(2==a.length){
+if(a[0] instanceof HTMLElement){
+sel = a[0];
+value = a[1];
+}else{
+value = a[0];
+label = a[1];
+}
+}
+else if(3===a.length){
+sel = a[0];
+value = a[1];
+label = a[2];
+}
+const o = this.create('option');
+if(undefined !== value){
+o.value = value;
+this.append(o, this.text(label || value));
+}else if(undefined !== label){
+this.append(o, label);
+}
+if(sel) this.append(sel, o);
+return o;
+};
+dom.h = function(level){
+return this.create('h'+level);
+};
+dom.ul = dom.createElemFactory('ul');
+dom.li = function(parent){
+const li = this.create('li');
+if(parent) parent.appendChild(li);
+return li;
+};
+dom.createElemFactoryWithOptionalParent = function(childType){
+return function(parent){
+const e = this.create(childType);
+if(parent) parent.appendChild(e);
+return e;
+};
+};
+dom.table = dom.createElemFactory('table');
+dom.thead = dom.createElemFactoryWithOptionalParent('thead');
+dom.tbody = dom.createElemFactoryWithOptionalParent('tbody');
+dom.tfoot = dom.createElemFactoryWithOptionalParent('tfoot');
+dom.tr = dom.createElemFactoryWithOptionalParent('tr');
+dom.td = dom.createElemFactoryWithOptionalParent('td');
+dom.th = dom.createElemFactoryWithOptionalParent('th');
+dom.fieldset = function(legendText){
+const fs = this.create('fieldset');
+if(legendText){
+this.append(
+fs,
+(legendText instanceof HTMLElement)
+? legendText
+: this.append(this.create('legend'),legendText)
+);
+}
+return fs;
+};
+dom.append = function f(parent){
+const a = argsToArray(arguments);
+a.shift();
+for(let i in a) {
+var e = a[i];
+if(isArray(e) || e.forEach){
+e.forEach((x)=>f.call(this, parent,x));
+continue;
+}
+if('string'===typeof e
+|| 'number'===typeof e
+|| 'boolean'===typeof e) e = this.text(e);
+parent.appendChild(e);
+}
+return parent;
+};
+dom.input = function(type){
+return this.attr(this.create('input'), 'type', type);
+};
+dom.checkbox = function(value, checked){
+const rc = this.input('checkbox');
+if(1===arguments.length && 'boolean'===typeof value){
+checked = !!value;
+value = undefined;
+}
+if(undefined !== value) rc.value = value;
+if(!!checked) rc.checked = true;
+return rc;
+};
+dom.radio = function(){
+const rc = this.input('radio');
+let name, value, checked;
+if(1===arguments.length && 'boolean'===typeof name){
+checked = arguments[0];
+name = value = undefined;
+}else if(2===arguments.length){
+name = arguments[0];
+if('boolean'===typeof arguments[1]){
+checked = arguments[1];
+}else{
+value = arguments[1];
+checked = undefined;
+}
+}else if(arguments.length){
+name = arguments[0];
+value = arguments[1];
+checked = arguments[2];
+}
+if(name) this.attr(rc, 'name', name);
+if(undefined!==value) rc.value = value;
+if(!!checked) rc.checked = true;
+return rc;
+};
+const domAddRemoveClass = function f(action,e){
+if(!f.rxSPlus){
+f.rxSPlus = /\s+/;
+f.applyAction = function(e,a,v){
+if(!e || !v
+) return;
+else if(e.forEach){
+e.forEach((E)=>E.classList[a](v));
+}else{
+e.classList[a](v);
+}
+};
+}
+var i = 2, n = arguments.length;
+for( ; i < n; ++i ){
+let c = arguments[i];
+if(!c) continue;
+else if(isArray(c) ||
+('string'===typeof c
+&& c.indexOf(' ')>=0
+&& (c = c.split(f.rxSPlus)))
+|| c.forEach
+){
+c.forEach((k)=>k ? f.applyAction(e, action, k) : false);
+}else if(c){
+f.applyAction(e, action, c);
+}
+}
+return e;
+};
+dom.addClass = function(e,c){
+const a = argsToArray(arguments);
+a.unshift('add');
+return domAddRemoveClass.apply(this, a);
+};
+dom.removeClass = function(e,c){
+const a = argsToArray(arguments);
+a.unshift('remove');
+return domAddRemoveClass.apply(this, a);
+};
+dom.toggleClass = function f(e,c){
+if(e.forEach){
+e.forEach((x)=>x.classList.toggle(c));
+}else{
+e.classList.toggle(c);
+}
+return e;
+};
+dom.hasClass = function(e,c){
+return (e && e.classList) ? e.classList.contains(c) : false;
+};
+dom.moveTo = function(dest,e){
+const n = arguments.length;
+var i = 1;
+const self = this;
+for( ; i < n; ++i ){
+e = arguments[i];
+this.append(dest, e);
+}
+return dest;
+};
+dom.moveChildrenTo = function f(dest,e){
+if(!f.mv){
+f.mv = function(d,v){
+if(d instanceof Array){
+d.push(v);
+if(v.parentNode) v.parentNode.removeChild(v);
+}
+else d.appendChild(v);
+};
+}
+const n = arguments.length;
+var i = 1;
+for( ; i < n; ++i ){
+e = arguments[i];
+if(!e){
+console.warn("Achtung: dom.moveChildrenTo() passed a falsy value at argment",i,"of",
+arguments,arguments[i]);
+continue;
+}
+if(e.forEach){
+e.forEach((x)=>f.mv(dest, x));
+}else{
+while(e.firstChild){
+f.mv(dest, e.firstChild);
+}
+}
+}
+return dest;
+};
+dom.replaceNode = function f(old,nu){
+var i = 1, n = arguments.length;
+++f.counter;
+try {
+for( ; i < n; ++i ){
+const e = arguments[i];
+if(e.forEach){
+e.forEach((x)=>f.call(this,old,e));
+continue;
+}
+old.parentNode.insertBefore(e, old);
+}
+}
+finally{
+--f.counter;
+}
+if(!f.counter){
+old.parentNode.removeChild(old);
+}
+};
+dom.replaceNode.counter = 0;
+dom.attr = function f(e){
+if(2===arguments.length) return e.getAttribute(arguments[1]);
+const a = argsToArray(arguments);
+if(e.forEach){
+e.forEach(function(x){
+a[0] = x;
+f.apply(f,a);
+});
+return e;
+}
+a.shift();
+while(a.length){
+const key = a.shift(), val = a.shift();
+if(null===val || undefined===val){
+e.removeAttribute(key);
+}else{
+e.setAttribute(key,val);
+}
+}
+return e;
+};
+const enableDisable = function f(enable){
+var i = 1, n = arguments.length;
+for( ; i < n; ++i ){
+let e = arguments[i];
+if(e.forEach){
+e.forEach((x)=>f(enable,x));
+}else{
+e.disabled = !enable;
+}
+}
+return arguments[1];
+};
+dom.enable = function(e){
+const args = argsToArray(arguments);
+args.unshift(true);
+return enableDisable.apply(this,args);
+};
+dom.disable = function(e){
+const args = argsToArray(arguments);
+args.unshift(false);
+return enableDisable.apply(this,args);
+};
+dom.selectOne = function(x,origin){
+var src = origin || document,
+e = src.querySelector(x);
+if(!e){
+e = new Error("Cannot find DOM element: "+x);
+console.error(e, src);
+throw e;
+}
+return e;
+};
+dom.flashOnce = function f(e,howLongMs,afterFlashCallback){
+if(e.dataset.isBlinking){
+return;
+}
+if(2===arguments.length && 'function' ===typeof howLongMs){
+afterFlashCallback = howLongMs;
+howLongMs = f.defaultTimeMs;
+}
+if(!howLongMs || 'number'!==typeof howLongMs){
+howLongMs = f.defaultTimeMs;
+}
+e.dataset.isBlinking = true;
+const transition = e.style.transition;
+e.style.transition = "opacity "+howLongMs+"ms ease-in-out";
+const opacity = e.style.opacity;
+e.style.opacity = 0;
+setTimeout(function(){
+e.style.transition = transition;
+e.style.opacity = opacity;
+delete e.dataset.isBlinking;
+if(afterFlashCallback) afterFlashCallback();
+}, howLongMs);
+return e;
+};
+dom.flashOnce.defaultTimeMs = 400;
+dom.flashOnce.eventHandler = (event)=>dom.flashOnce(event.target)
+dom.copyTextToClipboard = function(text){
+if( window.clipboardData && window.clipboardData.setData ){
+window.clipboardData.setData('Text',text);
+return true;
+}else{
+const x = document.createElement("textarea");
+x.style.position = 'fixed';
+x.value = text;
+document.body.appendChild(x);
+x.select();
+var rc;
+try{
+document.execCommand('copy');
+rc = true;
+}catch(err){
+rc = false;
+}finally{
+document.body.removeChild(x);
+}
+return rc;
+}
+};
+dom.copyStyle = function f(e, style){
+if(e.forEach){
+e.forEach((x)=>f(x, style));
+return e;
+}
+if(style){
+let k;
+for(k in style){
+if(style.hasOwnProperty(k)) e.style[k] = style[k];
+}
+}
+return e;
+};
+dom.parseHtml = function(){
+let childs, string, tgt;
+if(1===arguments.length){
+string = arguments[0];
+}else if(2==arguments.length){
+tgt = arguments[0];
+string  = arguments[1];
+}
+if(string){
+const newNode = new DOMParser().parseFromString(string, 'text/html');
+childs = newNode.documentElement.querySelector('body');
+childs = childs ? Array.prototype.slice.call(childs.childNodes, 0) : [];
+}else{
+childs = [];
+}
+return tgt ? this.moveTo(tgt, childs) : childs;
+};
+F.connectPagePreviewers = function f(selector,methodNamespace){
+if('string'===typeof selector){
+selector = document.querySelectorAll(selector);
+}else if(!selector.forEach){
+selector = [selector];
+}
+if(!methodNamespace){
+methodNamespace = F.page;
+}
+selector.forEach(function(e){
+e.addEventListener(
+'click', function(r){
+const eTo = '#'===e.dataset.fPreviewTo[0]
+? document.querySelector(e.dataset.fPreviewTo)
+: methodNamespace[e.dataset.fPreviewTo],
+eFrom = '#'===e.dataset.fPreviewFrom[0]
+? document.querySelector(e.dataset.fPreviewFrom)
+: methodNamespace[e.dataset.fPreviewFrom],
+asText = +(e.dataset.fPreviewAsText || 0);
+eTo.textContent = "Fetching preview...";
+methodNamespace[e.dataset.fPreviewVia](
+(eFrom instanceof Function ? eFrom.call(methodNamespace) : eFrom.value),
+function(r){
+if(eTo instanceof Function) eTo.call(methodNamespace, r||'');
+else if(!r){
+dom.clearElement(eTo);
+}else if(asText){
+eTo.textContent = r;
+}else{
+dom.parseHtml(dom.clearElement(eTo), r);
+}
+}
+);
+}, false
+);
+});
+return this;
+};
+return F.dom = dom;
+})(window.fossil);
+/* fossil.pikchr.js *************************************************************/
+(function(F){
+"use strict";
+const D = F.dom, P = F.pikchr = {};
+P.addSrcView = function f(svg){
+if(!f.hasOwnProperty('parentClick')){
+f.parentClick = function(ev){
+if(ev.altKey || ev.metaKey || ev.ctrlKey
+|| this.classList.contains('toggle')){
+this.classList.toggle('source');
+ev.stopPropagation();
+ev.preventDefault();
+}
+};
+};
+if(!svg) svg = 'svg.pikchr';
+if('string' === typeof svg){
+document.querySelectorAll(svg).forEach((e)=>f.call(this, e));
+return this;
+}else if(svg.forEach){
+svg.forEach((e)=>f.call(this, e));
+return this;
+}
+if(svg.dataset.pikchrProcessed){
+return this;
+}
+svg.dataset.pikchrProcessed = 1;
+const parent = svg.parentNode.parentNode;
+const srcView = parent ? svg.parentNode.nextElementSibling : undefined;
+if(!srcView || !srcView.classList.contains('pikchr-src')){
+return this;
+}
+parent.addEventListener('click', f.parentClick, false);
+};
+})(window.fossil);
+</script>
+<div class="footer">
+<big>Keep in touch ... join the community, subscribe the SpatiaLite Users <a href="http://groups.google.com/group/spatialite-users">mailing list</a></big><hr>
+<small>SpatiaLite is developed and maintained by Alessandro Furieri <a href="mailto:a.furieri@lqt.it">a.furieri@lqt.it</a></small><br>
+<small>Fossil version 2.13 [e7bba4ff36] 2020-11-01 00:13:51</small>
+</div>
+</body></html>
