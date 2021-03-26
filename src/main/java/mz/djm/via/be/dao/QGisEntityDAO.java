@@ -1,34 +1,16 @@
 package mz.djm.via.be.dao;
 
-import mz.djm.via.fe.entity.BaseObject;
-import mz.djm.via.fe.entity.IntervencaoType;
-import mz.djm.via.fe.entity.Template;
+import java.util.List;
 
-public interface QGisEntityDAO {
+import org.springframework.jdbc.core.RowMapper;
 
-	/**
-	 * Add template values into vias_tbls
-	 * @param templ
-	 */
-	public void addRow(Template templ);
-	
-	/**
-	 * Update values into vias_tbls
-	 * @param id
-	 */
-	public void updateRowById(Long id);
+import mz.djm.via.be.entity.QGiSEntity;
+
+public interface QGisEntityDAO  extends QGisDAO<QGiSEntity> {
 	
 	
-	/**
-	 * 
-	 */
-	public <T extends BaseObject> T findRowById(Long id);
+	public void updateRowById(Object[]... filter);
 	
-	/**
-	 * 
-	 * @param <T>
-	 * @return
-	 */
-	public <T extends BaseObject> T listRowsByCode(String filter);
+	public List<QGiSEntity> getRows();
 
 }

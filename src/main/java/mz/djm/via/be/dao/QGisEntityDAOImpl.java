@@ -1,71 +1,90 @@
 package mz.djm.via.be.dao;
 
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import mz.djm.via.be.datasource.EntityDatasource;
-import mz.djm.via.fe.entity.BaseObject;
-import mz.djm.via.fe.entity.IntervencaoType;
-import mz.djm.via.fe.entity.Template;
+import mz.djm.via.be.entity.QGiSEntity;
 
-public class QGisEntityDAOImpl implements QGisEntityDAO{
+/**
+ * Classe que permiter fazer o mapeamento
+ * de todas a linhas de resgito da base QGIS
+ * 
+ * @author Sergio
+ *
+ */
+public class QGisEntityDAOImpl extends QGisDAOImpl<QGiSEntity> implements QGisEntityDAO {
 
-	private JdbcTemplate template;  
-	private EntityDatasource datasource;
-	
-	public QGisEntityDAOImpl() {
-	     
-		this.datasource = new EntityDatasource("spatial-test-db.sqlite");
-	     
-	    template =new JdbcTemplate(datasource);
+	protected QGisEntityDAOImpl() throws IOException {
+		
+		super();
 	}
 	
-	@Override
-	public void addRow(Template templ) {
+	public static  QGisEntityDAOImpl getInstance() throws IOException {
 		
-		// TODO: 
-		
+		return new QGisEntityDAOImpl();
 	}
 
 	@Override
-	public void updateRowById(Long id) {
-		// TODO Auto-generated method stub
+	public List<QGiSEntity> getRows() {
 		
-	}
-
-	@Override
-	public <T extends BaseObject> T findRowById(Long id) {
-		// TODO Auto-generated method stub
-		
-		return null;
-	}
-
-	@Override
-	public <T extends BaseObject> T listRowsByCode(String filter) {
-		// TODO Auto-generated method stub
-		String sql = "SELECT * FROM vias_tbl;";
-		
-		this.template.query(sql, new IntervencaoTypeMapper());
-	
-		return null;
+		return super.getRowsBy("SELECT * FROM dados23032021;", new QGisEntityMapper());
 	}
 	
-	
-	private class IntervencaoTypeMapper implements RowMapper<IntervencaoType>{
-
-		@Override
-		public IntervencaoType mapRow(ResultSet rs, int rowNum) throws SQLException {
-			
-			IntervencaoType iType = new IntervencaoType();
-			
-			//iType.se
-			return iType;
-		}
-		
-		
+	//nested Class
+	public static class QGisEntityMapper implements RowMapper<QGiSEntity> {
+				
+				@Override
+				public QGiSEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
+					
+					QGiSEntity gis = new QGiSEntity();
+					
+					gis.objectid			=rs.getDouble("objectid");//" NUMERIC(10,0);
+					gis.cod_sigem			=rs.getString("cod_sigem");//" VARCHAR(36);
+					gis.nvia				=rs.getString("nvia");//" VARCHAR(11);
+					gis.tipovia				=rs.getString("tipovia");//" VARCHAR(50);
+					gis.toponimo			=rs.getString("toponimo");//" VARCHAR(150);
+					gis.distmunici			=rs.getString("distmunici");//" VARCHAR(50);
+					gis.senderecam			=rs.getString("senderecam");//" VARCHAR(1);
+					gis.hierarquia			=rs.getString("hierarquia");//" VARCHAR(2);
+					gis.compriment			=rs.getDouble("compriment");//" NUMERIC(19,11);
+					gis.largura_m			=rs.getDouble("largura_m");//" NUMERIC(19,11);
+					gis.obs					=rs.getString("obs");//" VARCHAR(254);
+					gis.shape_fid			=rs.getDouble("shape_fid");//" NUMERIC(10,0);
+					gis.shape_leng			=rs.getDouble("shape_leng");//" NUMERIC(19,11);
+					gis.shape_stle			=rs.getDouble("shape_stle");//" NUMERIC(19,11);
+					gis.icp_value			=rs.getDouble("icp_value");//" NUMERIC(10,0);
+					gis.intervencao_type 	=rs.getString("intervencao_type");//" VARCHAR(30);
+					gis.icp_pos_value	 	=rs.getDouble("icp_pos_value");//" NUMERIC(10,0);
+					gis.volume_transito  	=rs.getDouble("volume_transito");//" NUMERIC(10,0);
+					gis.custo_seguimento 	=rs.getDouble("custo_seguimento");//" NUMERIC(11,3);
+					gis.criterio01_value 	=rs.getDouble("criterio01_value");//" NUMERIC(10,0);
+					gis.prioridade01_value 	=rs.getDouble("prioridade01_value");//" NUMERIC(11,3);
+					gis.psi_value		   	=rs.getDouble("psi_value");//" NUMERIC(11,3);
+					gis.criterio02_value   	=rs.getDouble("criterio02_value");//" NUMERIC(11,3);
+					gis.priodade02_value	=rs.getDouble("priodade02_value");//" NUMERIC(11,3);
+					gis.criterio03_value	=rs.getDouble("criterio03_value");//" NUMERIC(11,3);
+					gis.prioridade03_value	=rs.getDouble("prioridade03_value");//" NUMERIC(11,3);
+					gis.criterio04_value	=rs.getDouble("criterio04_value");//" NUMERIC(11,3);
+					gis.prioridade04_value	=rs.getDouble("prioridade04_value");//" NUMERIC(11,3);
+					gis.criterio05_value	=rs.getDouble("criterio05_value");//" NUMERIC(11,3);
+					gis.prioridade05_value	=rs.getDouble("prioridade05_value");//" NUMERIC(11,3);
+					gis.criterio06_value	=rs.getDouble("criterio06_value");//" NUMERIC(11,3);
+					gis.prioridade06_value	=rs.getDouble("gis.prioridade06_value;");//" NUMERIC(11,3);
+					gis.criterio07_value	=rs.getDouble("criterio07_value");//" NUMERIC(11,3);
+					gis.prioridade07_value	=rs.getDouble("prioridade07_value");//" NUMERIC(11,3);
+					gis.prioridade08_value	=rs.getDouble("prioridade08_value");//" NUMERIC(11,3);
+					gis.criterio09_value	=rs.getDouble("criterio09_value");//" NUMERIC(11,3);
+					gis.prioridade09_value	=rs.getDouble("prioridade09_value");//" NUMERIC(11,3);
+					gis.prioridade_value	=rs.getDouble("prioridade_value");//" NUMERIC(11,3);
+					gis.prioridade_status	=rs.getDouble("prioridade_status");//" VARCHAR(50);
+					
+					return gis;
+				}
+				
 	}
-
+		
 }

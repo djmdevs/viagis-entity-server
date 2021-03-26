@@ -1,10 +1,12 @@
 package mz.djm.via.be.rule;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.ArrayList;
 import java.util.Collection;
-
+import mz.djm.via.be.dao.QGisEntityDAO;
+import mz.djm.via.be.dao.QGisEntityDAOImpl;
+import mz.djm.via.be.entity.QGiSEntity;
 import mz.djm.via.fe.entity.Criterio;
 import mz.djm.via.fe.entity.DefeitoType;
 import mz.djm.via.fe.entity.IntervencaoType;
@@ -20,6 +22,13 @@ import mz.djm.via.fe.entity.subs.Criterio06;
 public class CriterioRule implements IRule {
 
 	private IntervencaoType intervencao;
+	private QGisEntityDAO gisdao;
+	
+	public CriterioRule() throws Exception {
+		
+		this.gisdao = QGisEntityDAOImpl.getInstance();
+	
+	}
 	
 	@Override
 	public Long executeRule10(DefeitoType[] defeitos, int defNumbers) {
@@ -146,10 +155,6 @@ public class CriterioRule implements IRule {
 		
 		//TODO: add other instances if exists
 		
-		
-		
-		
-		//
 		return rule40.doubleValue();
 	}
 	
@@ -166,7 +171,7 @@ public class CriterioRule implements IRule {
 			//call list of criterio01 values
 			rule50 = new BigDecimal(criterio01.getValue());
 			
-			rule50 = rule50.divide(rule50, new MathContext(new BigDecimal(this.getCriterioSummarizing(new Criterio01())).toString()));
+			rule50 = rule50.divide(rule50, new MathContext(new BigDecimal(this.getCriterioSummarizing(criterio01)).toString()));
 	
 		}
 		
@@ -174,33 +179,31 @@ public class CriterioRule implements IRule {
 	}
 	
 	/**
-	 * 
+	 * Servico que permite sumarizar os valores dos criterios
+	 * com base na regra de negocio 40
 	 * @param criterio
 	 * @return
 	 */
-	private Collection<Criterio> getCriterioTypeList(Criterio criterio){
-		
-		//get collection from database and filter by criterio
-		
-		if(criterio instanceof Criterio01) {
-			
-			BigDecimal rule50 = new BigDecimal(criterio.getValue());
-			rule50 = rule50.divide(rule50, new MathContext(new BigDecimal(this.getCriterioSummarizing(new Criterio01())).toString()));
-		
-		}
-		
-		return null;
-	}
-	
 	private Double getCriterioSummarizing(Criterio criterio) {
 		
-		Collection<Criterio> criterios = new ArrayList<Criterio>();
+		Collection<QGiSEntity> gisRows = this.gisdao.getRows();
 		
 		double summurizedCriterio = 0;
 		
-		for(Criterio c : this.getCriterioTypeList((Criterio) criterio)) {
+		for(QGiSEntity row : gisRows) {
 			
-			 summurizedCriterio = summurizedCriterio + c.getValue();
+			if(criterio instanceof Criterio01) {
+				
+				 //For-each row execute rule40 and get the criterio1 
+				 summurizedCriterio = summurizedCriterio + this.executeRule40(new Criterio01(row.criterio01_value));
+			
+			}
+			
+			if(criterio instanceof Criterio06) {
+				
+				 //For-each row execute rule40 and get the criterio6
+				 summurizedCriterio = summurizedCriterio + this.executeRule40(new Criterio06(row.criterio06_value));
+			}
 		}
 		
 		return summurizedCriterio; 

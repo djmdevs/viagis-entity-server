@@ -1,10 +1,13 @@
 package mz.djm.via.be.datasource;
 
+import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.logging.Logger;
 
+import org.springframework.core.io.Resource;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteDataSource;
 import org.sqlite.javax.SQLiteConnectionPoolDataSource;
@@ -15,61 +18,72 @@ import org.sqlite.javax.SQLiteConnectionPoolDataSource;
  *
  */
 
-
 /*
 * Add this implementation on gendao
 */
-public final class EntityDatasource extends SQLiteConnectionPoolDataSource {
+public final class QGisDatasource extends SQLiteConnectionPoolDataSource {
 	
 	private SQLiteDataSource sqlDS;
 	private String dbName;
 	
 	//one with dbName only
-	public EntityDatasource(String dbName) {
+	private QGisDatasource(String dbName) {
 
 		this.dbName = dbName;
 		
 		try {
 		
-			sqlDS = new SQLiteConnectionPoolDataSource();
-			sqlDS.setUrl("jdbc:sqlite:".concat(this.dbName));
+			this.sqlDS = new SQLiteConnectionPoolDataSource();
+			this.sqlDS.setUrl("jdbc:sqlite:".concat(this.dbName));
 			
 		}catch (Exception e) {
 			// TODO: implementar loggers
 			Logger.getGlobal().warning(e.getLocalizedMessage());
 		}
 		
-		
 	}
 	
 	//other with dbPath and dbName
-	public EntityDatasource(String dbPath, String dbName) {
+	@Deprecated
+    private QGisDatasource(String dbPath, String dbName) {
 	
 		this(dbPath.concat(dbName));
 		
+	}
 	
+	public QGisDatasource(Resource resource) throws IOException {
+		
+		this(resource.getFile().getPath());
+		
 	}
 	
 	@Override
 	public Connection getConnection() throws SQLException {
 	
-		return sqlDS.getConnection("test", "sqldb123");
+		return this.sqlDS.getConnection("test", "test123");
 	
 	}
 	
+	public SQLiteDataSource getDatasource() {
+		
+		return this.sqlDS;
+	}
+	
+	/*
 	public Connection getSpatialConnection() throws SQLException {
 		
-		return sqlDS.getConnection("test", "spatialdb123");
-	}
+		return this.sqlDS.getConnection("test", "test123");
+	}*/
 	
 	/**
 	 * Use SpringJBDCTemplate for simple implementation
 	 * @param query
-	 * @return
+	 * @return A rersultSet with cursor dataselection
 	 * @throws ClassNotFoundException
 	 * @throws SQLException
 	 */
-	public String executeQuery(String query) throws ClassNotFoundException, SQLException {
+	/*
+	public ResultSet executeQuery(String query) throws ClassNotFoundException, SQLException {
 		
 		//set driver
 		Class.forName("org.sqlite.JDBC");
@@ -83,15 +97,13 @@ public final class EntityDatasource extends SQLiteConnectionPoolDataSource {
 		config.toProperties();
 		
 		//create statement
-		Statement stmt = connection.createStatement();
+		PreparedStatement stmt= connection.prepareStatement(query);
 		
-		return stmt.executeQuery(query).toString();
+		return (ResultSet) stmt.executeQuery();
 		
 		
 		
-	}
+	}*/
 	
-	public SQLiteDataSource getDatasource() {
-		return sqlDS;
-	}
+	
 }
