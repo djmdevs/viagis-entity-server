@@ -27,8 +27,8 @@ public class QGisEntityDAOImplTest extends QGisDAOImplTest {
 	 * This is an integration test
 	 */
 	@Test
-	public void testGisRowsWithNoParameterMayNotBeEmpty(){
+	public void testGisRowsWithNoParameterMuatBeEmpty(){
 		
-		assertEquals(1, this.gisDAO.getRows());
+		assertEquals(0, this.gisDAO.getRows().size());
 	}
 }

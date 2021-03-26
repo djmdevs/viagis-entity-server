@@ -73,7 +73,7 @@ public class QGisEntityDAOImpl extends QGisDAOImpl<QGiSEntity> implements QGisEn
 					gis.criterio05_value	=rs.getDouble("criterio05_value");//" NUMERIC(11,3);
 					gis.prioridade05_value	=rs.getDouble("prioridade05_value");//" NUMERIC(11,3);
 					gis.criterio06_value	=rs.getDouble("criterio06_value");//" NUMERIC(11,3);
-					gis.prioridade06_value	=rs.getDouble("prioridade06_value;");//" NUMERIC(11,3);
+					gis.prioridade06_value	=rs.getDouble("prioridade06_value");//" NUMERIC(11,3);
 					gis.criterio07_value	=rs.getDouble("criterio07_value");//" NUMERIC(11,3);
 					gis.prioridade07_value	=rs.getDouble("prioridade07_value");//" NUMERIC(11,3);
 					gis.prioridade08_value	=rs.getDouble("prioridade08_value");//" NUMERIC(11,3);
