@@ -9,7 +9,7 @@ import mz.djm.via.fe.entity.BaseObject;
  */
 public class QGiSEntity extends BaseObject{
 
-	 public Double objectid;//" NUMERIC(10,0);
+	 public Long objectid;//" NUMERIC(10,0);
 	 public String cod_sigem;//" VARCHAR(36);
 	 public String nvia;//" VARCHAR(11);
 	 public String tipovia;//" VARCHAR(50);

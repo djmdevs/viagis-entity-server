@@ -18,7 +18,7 @@ public interface IRule {
 	 * Calcula o índice de pavimento (icp)	
 	 * @return
 	 */
-	public Long executeRule10(DefeitoType[] defeitos, int totalDefeitos);
+	public Long executeRule10(DefeitoType[] defeitos, Integer totalDefeitos);
 	
 	/**
 	 * Executa a regra de calculo do tipo de intervenção 

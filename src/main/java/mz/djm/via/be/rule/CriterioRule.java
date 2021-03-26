@@ -31,7 +31,7 @@ public class CriterioRule implements IRule {
 	}
 	
 	@Override
-	public Long executeRule10(DefeitoType[] defeitos, int defNumbers) {
+	public Long executeRule10(DefeitoType[] defeitos, Integer defNumbers) {
 
 		if(defNumbers == 0)
 			return 0L; 

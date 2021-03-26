@@ -62,7 +62,7 @@ public class QGisEntityDAOImpl extends QGisDAOImpl<QGiSEntity> implements QGisEn
 					
 					QGiSEntity gis = new QGiSEntity();
 					
-					gis.objectid			=rs.getDouble("objectid");//" NUMERIC(10,0);
+					gis.objectid			=rs.getLong("objectid");//" NUMERIC(10,0);
 					gis.cod_sigem			=rs.getString("cod_sigem");//" VARCHAR(36);
 					gis.nvia				=rs.getString("nvia");//" VARCHAR(11);
 					gis.tipovia				=rs.getString("tipovia");//" VARCHAR(50);
