@@ -2,9 +2,13 @@ package mz.djm.via.be.rule;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.jdbc.UncategorizedSQLException;
+
 import mz.djm.via.be.dao.QGisEntityDAO;
 import mz.djm.via.be.dao.QGisEntityDAOImpl;
 import mz.djm.via.be.entity.QGiSEntity;
@@ -16,7 +20,7 @@ public class CriterioRuleTest{
 
 	private QGisEntityDAO gisdao;
 	private IRule rules;
-	private Template template;
+	
 	
 	@Before
 	public void setUp() throws Exception {
@@ -46,7 +50,7 @@ public class CriterioRuleTest{
 		final QGiSEntity gisRow = this.gisdao.findRowBy(new String[] {"objectid","4"});
 		
 		//get template
-		template = new Template();
+		final Template template = new Template();
 		
 		//set Via
 		final SeguimentoVia segmento = new SeguimentoVia();
@@ -93,14 +97,58 @@ public class CriterioRuleTest{
 		def14.setIndiceDedutivoValue(def14.getIndiceDedutivoValue());
 		def15.setIndiceDedutivoValue(def15.getIndiceDedutivoValue());
 		
-		//get defeitoType into template
+		//Automatizing Random set Defects
+		for(DefeitoType def: template.getMapDef().values()) {
+			
+			template.getMapDef().replace(def.getCode(), def);
+		}
+		
 		//final DefeitoType defType = new DefeitoType(null);
 		
-		assertEquals(def01.getCode(),template.getMapDef().get(def01.getCode()).getCode());
+		assertEquals(def01.getIndiceDedutivoValue(),template.getMapDef().get(def01.getCode()).getIndiceDedutivoValue());
 		
 		//calculate icpRule10
 	    //final Long icp = rules.executeRule10(null,null);
 	
+	}
+	
+	@Test//(expected = IllegalArgumentException.class)
+	public void testCalcularICPwithDefeitoAWithRandomIDedutivoInRule10() {
+		
+		 //get segmento, teste reverso apos feito o levantamento de campo
+		final QGiSEntity gisRow = this.gisdao.findRowBy(new String[] {"objectid","4"});
+		
+		//get template
+		final Template template = new Template();
+		
+		//set Via
+		final SeguimentoVia segmento = new SeguimentoVia();
+		segmento.setCode(gisRow.cod_sigem);
+		segmento.setComprimentoValue(gisRow.compriment);
+		segmento.setLarguraValue(gisRow.largura_m);
+		
+		//TODO: ICP must be calculated and be setted to segmeno object
+		
+		//set segmento into template
+		template.setVia(segmento);
+				
+		//Automatizing Random set Defects
+		final DefeitoType[] defArr = new DefeitoType[template.getMapDef().values().size()];
+		int i = defArr.length-1;
+		
+		for(DefeitoType def: template.getMapDef().values()) {
+					
+				template.getMapDef().replace(def.getCode(), def);
+				defArr[i--]= def;
+		}
+						
+		assertEquals(new Long(15).longValue(),defArr.length);
+		
+		//Now executeRule40 and calculate icpRule10
+		final Long icp = rules.executeRule10(defArr,defArr.length);
+		
+		assertEquals(8, icp.longValue());
+		
 	}
 
 }
