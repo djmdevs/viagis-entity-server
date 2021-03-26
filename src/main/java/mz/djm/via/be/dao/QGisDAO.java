@@ -26,24 +26,19 @@ public interface QGisDAO<T extends BaseObject> {
 	 * Update values into vias_tbls
 	 * @param id
 	 */
-	public void updateRowById(Object[]... filter);
+	public void updateRowById(Object... filter);
 	
-	default  void updateRowById(RowMapper<T> mapper, Object[]... filter) {}
+	default  void updateRowById(RowMapper<T> mapper, Object... filter) {}
 	
 	/**
 	 * 
 	 */
-	public  T findRowBy(Object[]... filter);
+	public  T findRowBy(RowMapper<T> mapper,Object... filter);
 	
-	default T findRowById(RowMapper<T> mapper, Object[]... filter) {return null;}
 	
 	public  List<T> getRowsBy(Object query, RowMapper<T> mapper);
 	
-	public static QGisDAOImpl getInstance() {
-		return null;
-	}
 	
-
 }
 
 

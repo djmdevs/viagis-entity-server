@@ -28,10 +28,30 @@ public class QGisEntityDAOImpl extends QGisDAOImpl<QGiSEntity> implements QGisEn
 		return new QGisEntityDAOImpl();
 	}
 
+	/**
+	 * filter[0] - belongs to customized filter field
+	 * filter[1] - belongs to field value
+	 */
+	@Override
+	public QGiSEntity findRowBy(Object... filter) {
+		
+		return super.findRowBy(new QGisEntityMapper(), 
+				new String[] {"SELECT * FROM dados23032021 seg WHERE seg.".concat(filter[0].toString())+"=?;",
+						filter[1].toString()
+				});
+	}
+	
 	@Override
 	public List<QGiSEntity> getRows() {
 		
 		return super.getRowsBy("SELECT * FROM dados23032021;", new QGisEntityMapper());
+	}
+	
+	
+	@Override
+	public void updateRowById(Object... filter) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 	//nested Class

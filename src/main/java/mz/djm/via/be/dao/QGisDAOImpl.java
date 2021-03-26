@@ -42,16 +42,19 @@ public class QGisDAOImpl<T extends BaseObject> implements QGisDAO<T>{
 
 
 	@Override
-	public  void updateRowById(Object[]... filter) {
+	public  void updateRowById(Object... filter) {
 		// TODO Auto-generated method stub
 		
 	}
 
-
+	/**
+	 * filter[0] - belongs to sqlquery
+	 * filter[1] - belongs to parameter filter
+	 */
 	@Override
-	public  T findRowBy(Object[]... filter) {
-		// TODO Auto-generated method stub
-		return null;
+	public  T findRowBy(RowMapper<T> mapper, Object... filter) {
+				
+		return (T) this.jdbc.query(filter[0].toString(), new String[] {filter[1].toString()}, mapper).get(0);
 	}
 
 

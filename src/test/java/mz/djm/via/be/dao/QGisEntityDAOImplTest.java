@@ -20,14 +20,14 @@ public class QGisEntityDAOImplTest extends QGisDAOImplTest {
 	@Test
 	public void testGisRowsWith2ParametersMayNotBeEmpty(){
 		
-		assertEquals(1, this.gisDAO.getRowsBy("SELECT * FROM dados23032021;", new QGisEntityMapper()));
+		assertEquals(1, this.gisDAO.getRowsBy("SELECT * FROM dados23032021;", new QGisEntityMapper()).size());
 	}
 	
 	/*
 	 * This is an integration test
 	 */
 	@Test
-	public void testGisRowsWithNoParameterMuatBeEmpty(){
+	public void testGisRowsWithNoParameterMustBeEmpty(){
 		
 		assertEquals(0, this.gisDAO.getRows().size());
 	}
