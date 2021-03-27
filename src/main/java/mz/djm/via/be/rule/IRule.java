@@ -1,5 +1,7 @@
 package mz.djm.via.be.rule;
 
+import java.util.Map;
+
 import mz.djm.via.fe.entity.Criterio;
 import mz.djm.via.fe.entity.DefeitoType;
 import mz.djm.via.fe.entity.IntervencaoType;
@@ -19,6 +21,10 @@ public interface IRule {
 	 * @return
 	 */
 	public Long executeRule10(DefeitoType[] defeitos, Integer totalDefeitos);
+	
+	
+	public Long executeRule10(Map mapDef);
+	
 	
 	/**
 	 * Executa a regra de calculo do tipo de intervenção 

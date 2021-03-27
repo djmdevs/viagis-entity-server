@@ -1,9 +1,10 @@
 package mz.djm.via.be.rule;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Collection;
+import java.util.Map;
+
 import mz.djm.via.be.dao.QGisEntityDAO;
 import mz.djm.via.be.dao.QGisEntityDAOImpl;
 import mz.djm.via.be.entity.QGiSEntity;
@@ -33,12 +34,28 @@ public class CriterioRule implements IRule {
 	@Override
 	public Long executeRule10(DefeitoType[] defeitos, Integer defNumbers) {
 
-		if(defNumbers == 0)
-			return 0L; 
-			// it has 15 defects
-		return	100L -  defeitos[defNumbers-1].getIndiceDedutivoValue();
+		if(defNumbers == 0)	
+			return defeitos[0].getIndiceDedutivoValue().longValue(); 
+			
+		// it has 15 defects
+		return	defeitos[defNumbers-1].getIndiceDedutivoValue().longValue() + executeRule10(defeitos,defNumbers-1);
 		
 	}
+	
+	@Override
+	public Long executeRule10(Map mapDef) {
+		
+		Integer sum =0;
+		
+		for(DefeitoType each: (Collection<DefeitoType>) mapDef.values()) {
+			
+			sum = sum + each.getIndiceDedutivoValue();
+		}
+		
+		return 100L - sum;
+	}
+	
+	
 
 	@Override
 	public IntervencaoType executeRule20(Long icpValue) {
@@ -101,7 +118,7 @@ public class CriterioRule implements IRule {
 		
 		this.intervencao = intervencaoObject;
 		
-		BigDecimal rule30 = new BigDecimal(intervencaoObject.getCustoValue());
+		BigDecimal rule30 = new BigDecimal(intervencaoObject.getCustoMetro2());
 		
 		rule30.multiply(new BigDecimal(intervencaoObject.getVia().getComprimentoValue()));
 		rule30.multiply(new BigDecimal(intervencaoObject.getVia().getLarguraValue()));
@@ -118,7 +135,7 @@ public class CriterioRule implements IRule {
 		//polimorf
 		//create factory or builder
 		
-		BigDecimal rule40 =null;
+		BigDecimal rule40S =null;
 		
 		//criterio 01 escopo
 		if(criterio instanceof Criterio01) {
@@ -127,14 +144,14 @@ public class CriterioRule implements IRule {
 			c01.setIntervecaoCost(this.intervencao.getCustoValue());
 			
 			//only for criteria 1
-			rule40 = new BigDecimal(this.intervencao.getICPposIntervencao().doubleValue());
+			rule40S = new BigDecimal(this.intervencao.getICPposIntervencao().doubleValue());
 			
 			//subtr
-			rule40.subtract(rule40, new MathContext(this.intervencao.getIcpValue().toString()));
+			rule40S.subtract(new BigDecimal(this.intervencao.getIcpValue()));
 		
 			//mult
-			rule40.multiply(rule40,
-					new MathContext(rule40.divide(
+			rule40S.multiply(rule40S,
+					new MathContext(rule40S.divide(
 							new BigDecimal(c01.getTransitoValue().intValue()), 
 							new MathContext(c01.getIntervecaoCusto().toString())).toString()));
 		
@@ -145,17 +162,17 @@ public class CriterioRule implements IRule {
 		if(criterio instanceof Criterio06) {
 			
 			//add rule here
-			rule40 = new BigDecimal(this.intervencao.getcO2Metro2());
+			rule40S = new BigDecimal(this.intervencao.getcO2Metro2());
 			
 			//math
-			rule40 = rule40.multiply(new BigDecimal(this.intervencao.getVia().getComprimentoValue()));
-			rule40 = rule40.multiply(new BigDecimal(this.intervencao.getVia().getLarguraValue()));
+			rule40S = rule40S.multiply(new BigDecimal(this.intervencao.getVia().getComprimentoValue()));
+			rule40S = rule40S.multiply(new BigDecimal(this.intervencao.getVia().getLarguraValue()));
 			
 		}
 		
 		//TODO: add other instances if exists
 		
-		return rule40.doubleValue();
+		return rule40S.doubleValue();
 	}
 	
 	@Override
@@ -207,6 +224,10 @@ public class CriterioRule implements IRule {
 		}
 		
 		return summurizedCriterio; 
+	}
+	
+	public IntervencaoType getIntervencao() {
+		return intervencao;
 	}
 
 }

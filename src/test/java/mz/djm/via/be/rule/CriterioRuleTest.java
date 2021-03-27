@@ -1,9 +1,9 @@
 package mz.djm.via.be.rule;
 
 import static org.junit.Assert.assertEquals;
-
-import java.util.ArrayList;
-import java.util.List;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -12,9 +12,13 @@ import org.springframework.jdbc.UncategorizedSQLException;
 import mz.djm.via.be.dao.QGisEntityDAO;
 import mz.djm.via.be.dao.QGisEntityDAOImpl;
 import mz.djm.via.be.entity.QGiSEntity;
+import mz.djm.via.fe.entity.Criterio;
 import mz.djm.via.fe.entity.DefeitoType;
+import mz.djm.via.fe.entity.IntervencaoType;
 import mz.djm.via.fe.entity.SeguimentoVia;
 import mz.djm.via.fe.entity.Template;
+import mz.djm.via.fe.entity.subs.Criterio01;
+import mz.djm.via.fe.entity.subs.Criterio06;
 
 public class CriterioRuleTest{
 
@@ -96,24 +100,16 @@ public class CriterioRuleTest{
 		def13.setIndiceDedutivoValue(def13.getIndiceDedutivoValue());
 		def14.setIndiceDedutivoValue(def14.getIndiceDedutivoValue());
 		def15.setIndiceDedutivoValue(def15.getIndiceDedutivoValue());
-		
-		//Automatizing Random set Defects
-		for(DefeitoType def: template.getMapDef().values()) {
 			
-			template.getMapDef().replace(def.getCode(), def);
-		}
-		
-		//final DefeitoType defType = new DefeitoType(null);
-		
 		assertEquals(def01.getIndiceDedutivoValue(),template.getMapDef().get(def01.getCode()).getIndiceDedutivoValue());
 		
 		//calculate icpRule10
-	    //final Long icp = rules.executeRule10(null,null);
+	    final Long icp = rules.executeRule10(null,null);
 	
 	}
 	
 	@Test//(expected = IllegalArgumentException.class)
-	public void testCalcularICPwithDefeitoAWithRandomIDedutivoInRule10() {
+	public void testExecutarRule10And20And30And40And50() {
 		
 		 //get segmento, teste reverso apos feito o levantamento de campo
 		final QGiSEntity gisRow = this.gisdao.findRowBy(new String[] {"objectid","4"});
@@ -126,9 +122,7 @@ public class CriterioRuleTest{
 		segmento.setCode(gisRow.cod_sigem);
 		segmento.setComprimentoValue(gisRow.compriment);
 		segmento.setLarguraValue(gisRow.largura_m);
-		
-		//TODO: ICP must be calculated and be setted to segmeno object
-		
+
 		//set segmento into template
 		template.setVia(segmento);
 				
@@ -136,6 +130,7 @@ public class CriterioRuleTest{
 		final DefeitoType[] defArr = new DefeitoType[template.getMapDef().values().size()];
 		int i = defArr.length-1;
 		
+		//transport to DefeitoType as an Attribute
 		for(DefeitoType def: template.getMapDef().values()) {
 					
 				template.getMapDef().replace(def.getCode(), def);
@@ -144,10 +139,53 @@ public class CriterioRuleTest{
 						
 		assertEquals(new Long(15).longValue(),defArr.length);
 		
-		//Now executeRule40 and calculate icpRule10
-		final Long icp = rules.executeRule10(defArr,defArr.length);
+		/*
+		 * ExecuteRule10
+		 */
+		final Long icp = rules.executeRule10(template.getMapDef());
 		
-		assertEquals(8, icp.longValue());
+		assertNotEquals(8, icp.longValue());
+		
+		/*
+		 * ExecuteRule20
+		 */
+		final IntervencaoType intervencaoWithoutCusto = rules.executeRule20(icp);
+		intervencaoWithoutCusto.setVia(segmento);
+		
+		//check intervencao atributes
+		assertNotEquals(0, intervencaoWithoutCusto.getcO2Metro2(), 1);
+		assertNotEquals("MT", intervencaoWithoutCusto.getCode());
+		assertNull("O custo de intervenção é Nulo", intervencaoWithoutCusto.getCustoValue());
+		assertNotEquals("XXXXX", intervencaoWithoutCusto.getVia().getCode());
+		
+		//check if Segmento has icp
+		assertNotEquals(new Long(2), segmento.getIcpValue());
+		
+		/*
+		 * ExecuteRule30
+		 */
+		final IntervencaoType intervencaoWithCusto = rules.executeRule30(intervencaoWithoutCusto);
+		assertNotNull("O custo de intervenção já não é Nulo", intervencaoWithCusto.getCustoValue());
+		
+		/*
+		 * ExecuteRule40
+		 */
+		final Criterio criterio01 = new Criterio01(rules.executeRule40(new Criterio01()));
+		assertNotEquals(1D, criterio01.getValue(), 1);
+		
+		final Criterio criterio06 = new Criterio06(rules.executeRule40(new Criterio06()));
+		assertNotEquals(6D, criterio06.getValue(), 1);
+		
+		/*
+		 * ExecuteRule50
+		 */
+				
+				
+		/*
+		 * Actualiza os dados da linha 4 do QGis no objecto QGisEntity
+		 */
+		
+		
 		
 	}
 

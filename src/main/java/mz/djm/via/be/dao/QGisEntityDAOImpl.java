@@ -36,6 +36,7 @@ public class QGisEntityDAOImpl extends QGisDAOImpl<QGiSEntity> implements QGisEn
 	public QGiSEntity findRowBy(Object... filter) {
 		
 		return super.findRowBy(new QGisEntityMapper(), 
+				
 				new String[] {"SELECT * FROM dados23032021 seg WHERE seg.".concat(filter[0].toString())+"=?;",
 						filter[1].toString()
 				});
