@@ -75,8 +75,8 @@ public class QGisEntityDAOImpl extends QGisDAOImpl<QGiSEntity> implements QGisEn
 					gis.largura_m			=rs.getDouble("largura_m");//" NUMERIC(19,11);
 					gis.obs					=rs.getString("obs");//" VARCHAR(254);
 					gis.shape_fid			=rs.getDouble("shape_fid");//" NUMERIC(10,0);
-					gis.shape_leng			=rs.getDouble("shape_leng");//" NUMERIC(19,11);
-					gis.shape_stle			=rs.getDouble("shape_stle");//" NUMERIC(19,11);
+					gis.shape_leng			=rs.getString("shape_leng");//" NUMERIC(19,11);
+					gis.shape_stle			=rs.getString("shape_stle");//" NUMERIC(19,11);
 					gis.icp_value			=rs.getDouble("icp_value");//" NUMERIC(10,0);
 					gis.intervencao_type 	=rs.getString("intervencao_type");//" VARCHAR(30);
 					gis.icp_pos_value	 	=rs.getDouble("icp_pos_value");//" NUMERIC(10,0);

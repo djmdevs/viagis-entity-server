@@ -5,6 +5,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import java.util.Random;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.jdbc.UncategorizedSQLException;
@@ -19,6 +21,7 @@ import mz.djm.via.fe.entity.SeguimentoVia;
 import mz.djm.via.fe.entity.Template;
 import mz.djm.via.fe.entity.subs.Criterio01;
 import mz.djm.via.fe.entity.subs.Criterio06;
+
 
 public class CriterioRuleTest{
 
@@ -57,15 +60,24 @@ public class CriterioRuleTest{
 		final Template template = new Template();
 		
 		//set Via
-		final SeguimentoVia segmento = new SeguimentoVia();
-		segmento.setCode(gisRow.cod_sigem);
-		segmento.setComprimentoValue(gisRow.compriment);
-		segmento.setLarguraValue(gisRow.largura_m);
+		final SeguimentoVia seg04 = new SeguimentoVia();
+		seg04.setCode(gisRow.cod_sigem);
+		seg04.setComprimentoValue(gisRow.compriment);
+		seg04.setLarguraValue(gisRow.largura_m);
+		seg04.setLatitude(gisRow.shape_leng);
+		seg04.setLongitude(gisRow.shape_stle);
 		
-		//TODO: ICP must be calculated and be setted to segmeno object
+		/*
+		atribuicao do um valor aleatorio volume de transito
+		gisRow.volume_transito = new Random().nextDouble();
+		*/
+		gisRow.volume_transito = 58d;
 		
+		//pega volume de transito
+		seg04.setTransitoValue(gisRow.volume_transito);
+
 		//set segmento into template
-		template.setVia(segmento);
+		template.setVia(seg04);
 		
 		//get standard defects from template [1..15]
 		final DefeitoType def01 = template.getMapDef().get("DEF1");
@@ -85,26 +97,105 @@ public class CriterioRuleTest{
 		final DefeitoType def15 = template.getMapDef().get("DEF15");
 		
 		//setting Random values to 
-		def01.setIndiceDedutivoValue(def01.getIndiceDedutivoValue());
-		def02.setIndiceDedutivoValue(def02.getIndiceDedutivoValue());
-		def03.setIndiceDedutivoValue(def03.getIndiceDedutivoValue());
-		def04.setIndiceDedutivoValue(def04.getIndiceDedutivoValue());
-		def05.setIndiceDedutivoValue(def05.getIndiceDedutivoValue());
-		def06.setIndiceDedutivoValue(def06.getIndiceDedutivoValue());
-		def07.setIndiceDedutivoValue(def07.getIndiceDedutivoValue());
-		def08.setIndiceDedutivoValue(def08.getIndiceDedutivoValue());
-		def09.setIndiceDedutivoValue(def09.getIndiceDedutivoValue());
-		def10.setIndiceDedutivoValue(def10.getIndiceDedutivoValue());
-		def11.setIndiceDedutivoValue(def11.getIndiceDedutivoValue());
-		def12.setIndiceDedutivoValue(def12.getIndiceDedutivoValue());
-		def13.setIndiceDedutivoValue(def13.getIndiceDedutivoValue());
-		def14.setIndiceDedutivoValue(def14.getIndiceDedutivoValue());
-		def15.setIndiceDedutivoValue(def15.getIndiceDedutivoValue());
+		def01.setIndiceDedutivoValue(8);
+		def02.setIndiceDedutivoValue(4);
+		def03.setIndiceDedutivoValue(10);
+		def04.setIndiceDedutivoValue(2);
+		def05.setIndiceDedutivoValue(7);
+		def06.setIndiceDedutivoValue(5);
+		def07.setIndiceDedutivoValue(9);
+		def08.setIndiceDedutivoValue(3);
+		def09.setIndiceDedutivoValue(8);
+		def10.setIndiceDedutivoValue(5);
+		def11.setIndiceDedutivoValue(8);
+		def12.setIndiceDedutivoValue(7);
+		def13.setIndiceDedutivoValue(2);
+		def14.setIndiceDedutivoValue(1);
+		def15.setIndiceDedutivoValue(10);
 			
-		assertEquals(def01.getIndiceDedutivoValue(),template.getMapDef().get(def01.getCode()).getIndiceDedutivoValue());
+		//assertEquals(def01.getIndiceDedutivoValue(),template.getMapDef().get(def01.getCode()).getIndiceDedutivoValue());
 		
-		//calculate icpRule10
-	    final Long icp = rules.executeRule10(null,null);
+		//associa os defeitos ao Template
+		template.getMapDef().replace(def01.getCode(), def01);
+		template.getMapDef().replace(def02.getCode(), def02);
+		template.getMapDef().replace(def03.getCode(), def03);
+		template.getMapDef().replace(def04.getCode(), def04);
+		template.getMapDef().replace(def05.getCode(), def05);
+		template.getMapDef().replace(def06.getCode(), def06);
+		template.getMapDef().replace(def07.getCode(), def07);
+		template.getMapDef().replace(def08.getCode(), def08);
+		template.getMapDef().replace(def09.getCode(), def09);
+		template.getMapDef().replace(def10.getCode(), def10);
+		template.getMapDef().replace(def11.getCode(), def11);
+		template.getMapDef().replace(def12.getCode(), def12);
+		template.getMapDef().replace(def13.getCode(), def13);
+		template.getMapDef().replace(def14.getCode(), def14);
+		template.getMapDef().replace(def15.getCode(), def15);
+		
+		//calculate rule10
+	    final Long icp = rules.executeRule10(template.getMapDef());
+	    assertEquals(11, icp.longValue());
+	    
+	    //calculate rule20
+	    final IntervencaoType intervencaoSemCustoGlobal = rules.executeRule20(icp);
+	    intervencaoSemCustoGlobal.setVia(seg04);
+	    assertEquals("RECONSTRUÇÃO", intervencaoSemCustoGlobal.getDescription());
+	    
+	    //calculate rule30
+	    final IntervencaoType intervencaoComCustoGlobal = rules.executeRule30(intervencaoSemCustoGlobal);
+	    assertEquals(1742900.0d, intervencaoComCustoGlobal.getCustoValue().doubleValue(),1);
+	    
+	    //calculate rule40
+	    assertEquals(58d, seg04.getVolumeTransitoValue(),1);
+	    
+	    final Criterio01 criterio01 = new Criterio01(seg04.getVolumeTransitoValue());
+	    criterio01.setValue(rules.executeRule40(criterio01));
+	    assertEquals(0.0028951747088186352d, criterio01.getValue(),1);
+	    
+	    final Criterio06 criterio06 = new Criterio06();
+	    criterio06.setValue(rules.executeRule40(criterio06));
+	    assertEquals(86721.6d, criterio06.getValue(),1);
+	   
+	    
+	    /*
+	     * Escrever na base QGis da entidade todos os dados
+	     */
+	    gisRow.icp_value			=icp.doubleValue();
+		gisRow.intervencao_type 	=intervencaoComCustoGlobal.getDescription();
+		gisRow.icp_pos_value	 	=intervencaoComCustoGlobal.getICPposIntervencao().doubleValue();
+		gisRow.volume_transito  	=intervencaoComCustoGlobal.getVia().getVolumeTransitoValue();
+		gisRow.custo_seguimento 	=intervencaoComCustoGlobal.getCustoValue();
+		gisRow.criterio01_value 	=criterio01.getValue();
+		//gisRow.prioridade01_value 	=rs.getDouble("prioridade01_value");//" NUMERIC(11,3);
+		//gisRow.psi_value		   	=rs.getDouble("psi_value");//" NUMERIC(11,3);
+		//gisRow.criterio02_value   	=rs.getDouble("criterio02_value");//" NUMERIC(11,3);
+		//gisRow.priodade02_value	=rs.getDouble("priodade02_value");//" NUMERIC(11,3);
+		//gisRow.criterio03_value	=rs.getDouble("criterio03_value");//" NUMERIC(11,3);
+		//gisRow.prioridade03_value	=rs.getDouble("prioridade03_value");//" NUMERIC(11,3);
+		//gisRow.criterio04_value	=rs.getDouble("criterio04_value");//" NUMERIC(11,3);
+		//gisRow.prioridade04_value	=rs.getDouble("prioridade04_value");//" NUMERIC(11,3);
+		//gisRow.criterio05_value	=rs.getDouble("criterio05_value");//" NUMERIC(11,3);
+		//gisRow.prioridade05_value	=rs.getDouble("prioridade05_value");//" NUMERIC(11,3);
+		gisRow.criterio06_value		=criterio06.getValue();
+		gisRow.prioridade06_value	=criterio06.getPriorityValue();
+		//gisRow.criterio07_value	=rs.getDouble("criterio07_value");//" NUMERIC(11,3);
+		//gisRow.prioridade07_value	=rs.getDouble("prioridade07_value");//" NUMERIC(11,3);
+		//gisRow.prioridade08_value	=rs.getDouble("prioridade08_value");//" NUMERIC(11,3);
+		//gisRow.criterio09_value	=rs.getDouble("criterio09_value");//" NUMERIC(11,3);
+		//gisRow.prioridade09_value	=rs.getDouble("prioridade09_value");//" NUMERIC(11,3);
+		//gisRow.prioridade_value	=rs.getDouble("prioridade_value");//" NUMERIC(11,3);
+		//gisRow.prioridade_status	=rs.getDouble("prioridade_status");//" VARCHAR(50);
+	    
+		
+	    this.gisdao.updateRowById(new String[] {"objectid","4"},
+	    		new String[] {"?","?","?","?","?","?","?","?"});
+	    
+	    /*definindo a prioridade do criterio calcula apos o lancamento dos dados
+	    * na base QGis
+	    */
+	    //rules.executeRule50(criterio01);
+	    
+	    
 	
 	}
 	
@@ -113,16 +204,18 @@ public class CriterioRuleTest{
 		
 		 //get segmento, teste reverso apos feito o levantamento de campo
 		final QGiSEntity gisRow = this.gisdao.findRowBy(new String[] {"objectid","4"});
-		
-		//get template
-		final Template template = new Template();
-		
+			
 		//set Via
 		final SeguimentoVia segmento = new SeguimentoVia();
 		segmento.setCode(gisRow.cod_sigem);
 		segmento.setComprimentoValue(gisRow.compriment);
 		segmento.setLarguraValue(gisRow.largura_m);
-
+		segmento.setLatitude(gisRow.shape_leng);
+		segmento.setLongitude(gisRow.shape_stle);
+		
+		//get template /simula o mobile
+		final Template template = new Template();
+		
 		//set segmento into template
 		template.setVia(segmento);
 				

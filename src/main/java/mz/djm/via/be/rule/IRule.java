@@ -42,7 +42,7 @@ public interface IRule {
 	public IntervencaoType executeRule30(IntervencaoType intervencaoObject);
 	
 	/**
-	 * Avalia os criterios de classificação 
+	 * Avalia alternativas de classificação 
 	 * e atribui a pontuação ponderada ao seguimento com base na analise multicritério.
 	 * retorna o indice de prioridade
 	 */

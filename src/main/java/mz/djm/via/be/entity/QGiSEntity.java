@@ -21,8 +21,8 @@ public class QGiSEntity extends BaseObject{
 	 public Double largura_m;//" NUMERIC(19,11);
 	 public String obs;//" VARCHAR(254);
 	 public Double shape_fid;//" NUMERIC(10,0);
-	 public Double shape_leng;//" NUMERIC(19,11);
-	 public Double shape_stle;//" NUMERIC(19,11);
+	 public String shape_leng;//" NUMERIC(19,11);
+	 public String shape_stle;//" NUMERIC(19,11);
 	 public Double icp_value;//" NUMERIC(10,0);
 	 public String intervencao_type;//" VARCHAR(30);
 	 public Double icp_pos_value;//" NUMERIC(10,0);

@@ -118,15 +118,15 @@ public class CriterioRule implements IRule {
 		
 		this.intervencao = intervencaoObject;
 		
-		BigDecimal rule30 = new BigDecimal(intervencaoObject.getCustoMetro2());
+		BigDecimal rule30 = new BigDecimal(this.intervencao.getCustoMetro2());
 		
-		rule30.multiply(new BigDecimal(intervencaoObject.getVia().getComprimentoValue()));
-		rule30.multiply(new BigDecimal(intervencaoObject.getVia().getLarguraValue()));
+		rule30 = rule30.multiply(new BigDecimal(this.intervencao.getVia().getComprimentoValue()));
+		rule30 = rule30.multiply(new BigDecimal(this.intervencao.getVia().getLarguraValue()));
 		
 		//define the hole necessary BUDGET
-		intervencaoObject.setCustoValue(rule30.doubleValue());
+		this.intervencao.setCustoValue(rule30.doubleValue());
 		
-		return intervencaoObject;
+		return this.intervencao;
 	}
 
 	@Override
@@ -135,44 +135,42 @@ public class CriterioRule implements IRule {
 		//polimorf
 		//create factory or builder
 		
-		BigDecimal rule40S =null;
+		BigDecimal rule40 =null;
 		
 		//criterio 01 escopo
 		if(criterio instanceof Criterio01) {
 			
 			Criterio01 c01 = (Criterio01) criterio;
 			c01.setIntervecaoCost(this.intervencao.getCustoValue());
+			c01.setICPValue(this.intervencao.getICPposIntervencao());
+			
 			
 			//only for criteria 1
-			rule40S = new BigDecimal(this.intervencao.getICPposIntervencao().doubleValue());
+			rule40 = new BigDecimal(this.intervencao.getICPposIntervencao().doubleValue());
 			
 			//subtr
-			rule40S.subtract(new BigDecimal(this.intervencao.getIcpValue()));
-		
+			rule40 = rule40.subtract(new BigDecimal(this.intervencao.getIcpValue()));
+	
 			//mult
-			rule40S.multiply(rule40S,
-					new MathContext(rule40S.divide(
-							new BigDecimal(c01.getTransitoValue().intValue()), 
-							new MathContext(c01.getIntervecaoCusto().toString())).toString()));
-		
-			
+			rule40 = rule40.multiply(new BigDecimal(c01.getTransitoValue().doubleValue()/c01.getIntervecaoCusto().doubleValue()));
+						
 		}
 		
 		//criterio 06 escopo
 		if(criterio instanceof Criterio06) {
 			
 			//add rule here
-			rule40S = new BigDecimal(this.intervencao.getcO2Metro2());
+			rule40 = new BigDecimal(this.intervencao.getcO2Metro2());
 			
 			//math
-			rule40S = rule40S.multiply(new BigDecimal(this.intervencao.getVia().getComprimentoValue()));
-			rule40S = rule40S.multiply(new BigDecimal(this.intervencao.getVia().getLarguraValue()));
+			rule40 = rule40.multiply(new BigDecimal(this.intervencao.getVia().getComprimentoValue()));
+			rule40 = rule40.multiply(new BigDecimal(this.intervencao.getVia().getLarguraValue()));
 			
 		}
 		
 		//TODO: add other instances if exists
 		
-		return rule40S.doubleValue();
+		return rule40.doubleValue();
 	}
 	
 	@Override
@@ -188,7 +186,7 @@ public class CriterioRule implements IRule {
 			//call list of criterio01 values
 			rule50 = new BigDecimal(criterio01.getValue());
 			
-			rule50 = rule50.divide(rule50, new MathContext(new BigDecimal(this.getCriterioSummarizing(criterio01)).toString()));
+			rule50 = rule50.divide(new BigDecimal(this.getCriterioSummarizing(criterio01)));
 	
 		}
 		
