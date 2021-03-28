@@ -57,7 +57,7 @@ public class CriterioRuleTest{
 		
 		final QGiSEntity gisRow = this.gisdao.findRowBy(new String[] {"objectid","100"});
 		
-		boolean isUpdatedRow = this.gisdao.updateRowById(
+		int isUpdatedRow = this.gisdao.updateRowById("",
 				new String[] {"objectid"			,"3000"},
 	    		new String[] {"icp_value"			,"87"},
 	    		new String[] {"intervencao_type"	,"NADA A FAZER"},
@@ -66,7 +66,7 @@ public class CriterioRuleTest{
 	    		new String[] {"criterio01_value"	,"50"}
 				);
 		
-		assertTrue(isUpdatedRow? "Row Updated": "Row Not Updated", isUpdatedRow);
+		assertTrue(isUpdatedRow>0? "Row Updated": "Row Not Updated", isUpdatedRow>0);
 	    
 	}
 	
