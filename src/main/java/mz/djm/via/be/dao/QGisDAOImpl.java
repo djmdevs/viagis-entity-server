@@ -42,9 +42,9 @@ public class QGisDAOImpl<T extends BaseObject> implements QGisDAO<T>{
 
 
 	@Override
-	public  void updateRowById(Object... filter) {
-		// TODO Auto-generated method stub
+	public  int updateRowById(Object sql, Object... filter) {
 		
+		return this.jdbc.update(new String(sql.toString()), filter);
 	}
 
 	/**

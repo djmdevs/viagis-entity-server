@@ -50,9 +50,9 @@ public class QGisEntityDAOImpl extends QGisDAOImpl<QGiSEntity> implements QGisEn
 	
 	
 	@Override
-	public void updateRowById(Object... filter) {
+	public boolean updateRowById(Object... filter) {
 		// TODO Auto-generated method stub
-		
+		return false;
 	}
 	
 	//nested Class

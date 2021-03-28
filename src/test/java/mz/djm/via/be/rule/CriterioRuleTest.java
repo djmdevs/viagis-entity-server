@@ -4,10 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Random;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.jdbc.UncategorizedSQLException;
 
@@ -39,12 +41,33 @@ public class CriterioRuleTest{
 	@Test(expected = UncategorizedSQLException.class)
 	public void testCheckIfParameterExists() {
 		
-		String[] parameter = {"objectid","1"};
+		final String[] parameter = {"objectid","1"};
 		
 		//get segmento
 		final QGiSEntity gisRow = this.gisdao.findRowBy(parameter);
 		
 		assertEquals("1", gisRow.objectid);
+	}
+	
+	/**
+	 * Testing updating row into database
+	 */
+	@Test
+	public void testUpdateRowIntoDatabase() {
+		
+		final QGiSEntity gisRow = this.gisdao.findRowBy(new String[] {"objectid","100"});
+		
+		boolean isUpdatedRow = this.gisdao.updateRowById(
+				new String[] {"objectid"			,"3000"},
+	    		new String[] {"icp_value"			,"87"},
+	    		new String[] {"intervencao_type"	,"NADA A FAZER"},
+	    		new String[] {"icp_pos_value"		,"30"},
+	    		new String[] {"custo_seguimento"	,"23000.56"},
+	    		new String[] {"criterio01_value"	,"50"}
+				);
+		
+		assertTrue(isUpdatedRow? "Row Updated": "Row Not Updated", isUpdatedRow);
+	    
 	}
 	
 	/**
@@ -155,18 +178,18 @@ public class CriterioRuleTest{
 	    final Criterio06 criterio06 = new Criterio06();
 	    criterio06.setValue(rules.executeRule40(criterio06));
 	    assertEquals(86721.6d, criterio06.getValue(),1);
-	   
-	    
+	  
 	    /*
 	     * Escrever na base QGis da entidade todos os dados
 	     */
+	    gisRow.objectid				=gisRow.objectid;
 	    gisRow.icp_value			=icp.doubleValue();
 		gisRow.intervencao_type 	=intervencaoComCustoGlobal.getDescription();
 		gisRow.icp_pos_value	 	=intervencaoComCustoGlobal.getICPposIntervencao().doubleValue();
 		gisRow.volume_transito  	=intervencaoComCustoGlobal.getVia().getVolumeTransitoValue();
 		gisRow.custo_seguimento 	=intervencaoComCustoGlobal.getCustoValue();
 		gisRow.criterio01_value 	=criterio01.getValue();
-		//gisRow.prioridade01_value 	=rs.getDouble("prioridade01_value");//" NUMERIC(11,3);
+		//gisRow.prioridade01_value 	=criterio01.getPriorityValue();
 		//gisRow.psi_value		   	=rs.getDouble("psi_value");//" NUMERIC(11,3);
 		//gisRow.criterio02_value   	=rs.getDouble("criterio02_value");//" NUMERIC(11,3);
 		//gisRow.priodade02_value	=rs.getDouble("priodade02_value");//" NUMERIC(11,3);
@@ -176,8 +199,8 @@ public class CriterioRuleTest{
 		//gisRow.prioridade04_value	=rs.getDouble("prioridade04_value");//" NUMERIC(11,3);
 		//gisRow.criterio05_value	=rs.getDouble("criterio05_value");//" NUMERIC(11,3);
 		//gisRow.prioridade05_value	=rs.getDouble("prioridade05_value");//" NUMERIC(11,3);
-		gisRow.criterio06_value		=criterio06.getValue();
-		gisRow.prioridade06_value	=criterio06.getPriorityValue();
+		//gisRow.criterio06_value		=criterio06.getValue();
+		//gisRow.prioridade06_value	=criterio06.getPriorityValue();
 		//gisRow.criterio07_value	=rs.getDouble("criterio07_value");//" NUMERIC(11,3);
 		//gisRow.prioridade07_value	=rs.getDouble("prioridade07_value");//" NUMERIC(11,3);
 		//gisRow.prioridade08_value	=rs.getDouble("prioridade08_value");//" NUMERIC(11,3);
@@ -185,10 +208,13 @@ public class CriterioRuleTest{
 		//gisRow.prioridade09_value	=rs.getDouble("prioridade09_value");//" NUMERIC(11,3);
 		//gisRow.prioridade_value	=rs.getDouble("prioridade_value");//" NUMERIC(11,3);
 		//gisRow.prioridade_status	=rs.getDouble("prioridade_status");//" VARCHAR(50);
-	    
-		
+	    		
 	    this.gisdao.updateRowById(new String[] {"objectid","4"},
-	    		new String[] {"?","?","?","?","?","?","?","?"});
+	    		new String[] {"objectid","4"},
+	    		new String[] {"objectid","4"},
+	    		new String[] {"objectid","4"},
+	    		new String[] {"objectid","4"},
+	    		new String[] {"objectid","4"});
 	    
 	    /*definindo a prioridade do criterio calcula apos o lancamento dos dados
 	    * na base QGis
@@ -199,6 +225,11 @@ public class CriterioRuleTest{
 	
 	}
 	
+	/**
+	 * Do not use this test 
+	 */
+	@Deprecated
+	@Ignore
 	@Test//(expected = IllegalArgumentException.class)
 	public void testExecutarRule10And20And30And40And50() {
 		

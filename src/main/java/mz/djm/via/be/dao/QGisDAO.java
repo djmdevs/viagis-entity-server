@@ -26,9 +26,9 @@ public interface QGisDAO<T extends BaseObject> {
 	 * Update values into vias_tbls
 	 * @param id
 	 */
-	public void updateRowById(Object... filter);
+	public int updateRowById(Object sql, Object... filter);
 	
-	default  void updateRowById(RowMapper<T> mapper, Object... filter) {}
+	default  boolean updateRowById(RowMapper<T> mapper, Object... filter) {return false;}
 	
 	/**
 	 * 
