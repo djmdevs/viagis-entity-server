@@ -19,8 +19,7 @@ public interface QGisDAO<T extends BaseObject> {
 	 * Add template values into vias_tbls
 	 * @param templ
 	 */
-	default void addRow(T t) {
-	}
+	default void addRow(T t) {}
 	
 	/**
 	 * Update values into vias_tbls
@@ -28,7 +27,7 @@ public interface QGisDAO<T extends BaseObject> {
 	 */
 	public int updateRowById(Object sql, Object... filter);
 	
-	default  boolean updateRowById(RowMapper<T> mapper, Object... filter) {return false;}
+	//default  boolean updateRowById(RowMapper<T> mapper, Object... filter) {return false;}
 	
 	/**
 	 * 

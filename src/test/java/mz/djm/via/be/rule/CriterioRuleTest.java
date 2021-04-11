@@ -6,7 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Random;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -16,6 +16,7 @@ import org.springframework.jdbc.UncategorizedSQLException;
 import mz.djm.via.be.dao.QGisEntityDAO;
 import mz.djm.via.be.dao.QGisEntityDAOImpl;
 import mz.djm.via.be.entity.QGiSEntity;
+import mz.djm.via.be.util.Field;
 import mz.djm.via.fe.entity.Criterio;
 import mz.djm.via.fe.entity.DefeitoType;
 import mz.djm.via.fe.entity.IntervencaoType;
@@ -56,17 +57,25 @@ public class CriterioRuleTest{
 	public void testUpdateRowIntoDatabase() {
 		
 		final QGiSEntity gisRow = this.gisdao.findRowBy(new String[] {"objectid","100"});
+		assertNotNull(gisRow);
 		
-		int isUpdatedRow = this.gisdao.updateRowById("",
-				new String[] {"objectid"			,"3000"},
-	    		new String[] {"icp_value"			,"87"},
-	    		new String[] {"intervencao_type"	,"NADA A FAZER"},
-	    		new String[] {"icp_pos_value"		,"30"},
-	    		new String[] {"custo_seguimento"	,"23000.56"},
-	    		new String[] {"criterio01_value"	,"50"}
-				);
+		//update GisRow
+		int isUpdatedRow = this.gisdao.updateRowByFields(
+				new StringBuilder().append("icp_value=? ,")
+				.append("intervencao_type=? ,")
+				.append("icp_pos_value=? ,")
+				.append("custo_seguimento=? ,")
+				.append("criterio01_value=? ")
+				.toString(),
+				new String[] {"87",
+					"NADA A FAZER",
+					"30",
+					"23000.56",
+					"50",
+					String.valueOf(gisRow.objectid)}
+		);
 		
-		assertTrue(isUpdatedRow>0? "Row Updated": "Row Not Updated", isUpdatedRow>0);
+		assertTrue(isUpdatedRow>0? "Row["+gisRow.objectid+"] Updated": "Row Not Updated", isUpdatedRow>0);
 	    
 	}
 	
@@ -209,12 +218,20 @@ public class CriterioRuleTest{
 		//gisRow.prioridade_value	=rs.getDouble("prioridade_value");//" NUMERIC(11,3);
 		//gisRow.prioridade_status	=rs.getDouble("prioridade_status");//" VARCHAR(50);
 	    		
-	    this.gisdao.updateRowById(new String[] {"objectid","4"},
-	    		new String[] {"objectid","4"},
-	    		new String[] {"objectid","4"},
-	    		new String[] {"objectid","4"},
-	    		new String[] {"objectid","4"},
-	    		new String[] {"objectid","4"});
+		int isUpdatedRow = this.gisdao.updateRowByFields(
+				new StringBuilder().append("icp_value=? ,")
+				.append("intervencao_type=? ,")
+				.append("icp_pos_value=? ,")
+				.append("custo_seguimento=? ,")
+				.append("criterio01_value=? ")
+				.toString(),
+				new String[] {"87",
+					"NADA A FAZER",
+					"30",
+					"23000.56",
+					"50",
+					String.valueOf(gisRow.objectid)}
+		);
 	    
 	    /*definindo a prioridade do criterio calcula apos o lancamento dos dados
 	    * na base QGis
@@ -223,6 +240,20 @@ public class CriterioRuleTest{
 	    
 	    
 	
+	}
+	
+	@Test
+	public void testMustAddMultipleParameter() {
+		
+		final Map fields = new Field.Builder()
+				.addParameterWithValue("objectid",100)
+				.addParameterWithValue("icp_value",80)
+				.addParameterWithValue("criterio01_value", 50)
+				.build();
+		
+		
+		assertEquals(3, fields.size());
+		assertEquals(10, fields.get("icp_value"));
 	}
 	
 	/**

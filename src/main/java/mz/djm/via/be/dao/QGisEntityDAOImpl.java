@@ -50,9 +50,13 @@ public class QGisEntityDAOImpl extends QGisDAOImpl<QGiSEntity> implements QGisEn
 	
 	
 	@Override
-	public int updateRowById(Object sql, Object... filter) {
-		// TODO Auto-generated method stub
-		return -1;
+	public int updateRowByFields(String parameters, String[] values) {
+		
+			
+		return super.updateRowById("UPDATE dados23032021 "
+								  +"SET   "+parameters 
+								  +"WHERE objectid=?", 
+								  values);
 	}
 	
 	//nested Class
@@ -107,5 +111,5 @@ public class QGisEntityDAOImpl extends QGisDAOImpl<QGiSEntity> implements QGisEn
 				}
 				
 	}
-		
+
 }

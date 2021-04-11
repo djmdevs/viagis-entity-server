@@ -9,7 +9,7 @@ import mz.djm.via.be.entity.QGiSEntity;
 public interface QGisEntityDAO  extends QGisDAO<QGiSEntity> {
 	
 	
-	public int updateRowById(Object sql, Object... filter);
+	public int updateRowByFields(String parameters, String[] values);
 	
 	public List<QGiSEntity> getRows();
 	

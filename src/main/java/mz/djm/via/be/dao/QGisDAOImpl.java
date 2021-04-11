@@ -18,7 +18,7 @@ public class QGisDAOImpl<T extends BaseObject> implements QGisDAO<T>{
 		
 	protected QGisDAOImpl() throws IOException {
 		
-		Resource resource = new ClassPathResource("dados23032021.sqlite");			
+		final Resource resource = new ClassPathResource("dados23032021.sqlite");			
 		
 		this.datasource = new QGisDatasource(resource);
 	     
@@ -41,10 +41,14 @@ public class QGisDAOImpl<T extends BaseObject> implements QGisDAO<T>{
 	}
 
 
+	/**
+	 * filter[0] - belongs to sqlquery
+	 * filter[1] - belongs to parameter filter
+	 */
 	@Override
-	public  int updateRowById(Object sql, Object... filter) {
-		
-		return this.jdbc.update(new String(sql.toString()), filter);
+	public  int updateRowById(Object sql, Object... fields) {
+		//SET ? where ?=objectid=?
+		return this.jdbc.update(sql.toString(), fields);
 	}
 
 	/**
@@ -54,7 +58,8 @@ public class QGisDAOImpl<T extends BaseObject> implements QGisDAO<T>{
 	@Override
 	public  T findRowBy(RowMapper<T> mapper, Object... filter) {
 				
-		return (T) this.jdbc.query(filter[0].toString(), new String[] {filter[1].toString()}, mapper).get(0);
+		return (T) this.jdbc.query(filter[0].toString(), 
+								  new String[] {filter[1].toString()}, mapper).get(0);
 	}
 
 
